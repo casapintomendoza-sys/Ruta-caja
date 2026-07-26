@@ -1,61 +1,73 @@
-# Ruta/Caja
+# Ruta/Caja v2
 
-App para llevar el control diario de un repartidor independiente: viajes cobrados,
-gastos de la jornada, cierre de caja (efectivo físico vs. lo que dice el sistema),
-reparto del dinero entre billeteras del hogar, gastos fijos con fecha de vencimiento
-y métricas/tips.
+Versión fusionada: mantiene el cuadre de caja real y los compromisos fijos
+inteligentes de la primera versión, y le suma lo mejor de EconomiHelper —
+turnos con cronómetro real, billeteras con efectivo y cuenta bancaria por
+separado, y sincronización en vivo entre los dos teléfonos.
 
-Es una app web normal (Node.js + PostgreSQL) pensada para desplegarse en Railway y
-que la usen dos personas desde sus propios teléfonos o computadoras, cada quien
-entrando a la misma URL.
+## Qué cambió respecto a la v1
+
+- **Turnos en vez de "día calendario".** Cada turno tiene hora real de inicio
+  y fin (con cronómetro en vivo), no un día fijo. Se puede iniciar y terminar
+  a cualquier hora, incluso cruzando la medianoche (se auto-cierra solo).
+- **Cada billetera (y El Fondo) maneja efectivo y cuenta bancaria por
+  separado.** El efectivo es un solo concepto que se mueve entre bolsas; cada
+  cuenta bancaria es propia de una billetera (o del Fondo).
+- **Los viajes distinguen el costo pagado en el negocio** (cuando paga en
+  efectivo en el local y el cliente le paga el total con tarjeta/transferencia)
+  del envío y la propina, que es la ganancia real.
+- **Sincronización en vivo con Socket.io**: si uno anota algo, el otro lo ve
+  al instante sin recargar.
+- **Movimientos editables/borrables con reversión automática de saldos**, y
+  un turno completo se puede borrar (revierte todo lo que generó).
 
 ## Estructura
 
 ```
-server.js          punto de entrada (Express)
-db.js               conexión a PostgreSQL + creación de tablas
-routes.js           toda la API (/api/...)
-utils.js             ayudantes de fecha y dinero
-public/              frontend (HTML/CSS/JS, sin build step)
-  index.html
-  styles.css
+server.js            Express + Socket.io
+db.js                 conexión a PostgreSQL + creación de tablas
+io.js                  helper para emitir el evento "sync" a todos los clientes
+utils.js                fechas/hora de Cancún (America/Cancun, UTC-5 fijo) y dinero
+wallet-helpers.js         slots efectivo/cuenta y vista de compromisos
+routes-core.js             billeteras, cuentas bancarias, transferencias, ajustes, compromisos
+routes-turnos.js            turnos, viajes, gastos de calle, cierre de caja, reparto
+routes-metrics.js            métricas por periodo y tips
+public/                       frontend (HTML/CSS/JS, sin build step)
   js/
-    api.js           llamadas fetch al backend
-    utils.js          formato de fecha/dinero para el frontend
-    main.js            arma las pestañas y el estado
-    view-jornada.js    pestaña Viajes (fondo del día, viajes, gastos)
-    view-cierre.js      pestaña Cierre (cuadre de caja + reparto)
-    view-billeteras.js   pestaña Billeteras (saldos, compromisos fijos)
-    view-metricas.js      pestaña Métricas (resumen, gráfico, tips)
+    api.js                     llamadas al backend
+    main.js                     navegación (Home → Panel Operativo / Panel Central)
+    view-home.js                  pantalla de inicio con los 2 roles
+    view-tablero.js                turno activo, viajes y gastos (Operativo)
+    view-historial.js               turnos pasados, cierre de caja y reparto (Operativo)
+    view-resumen.js                  balances y alertas (Central)
+    view-billeteras.js                saldos, transferencias y compromisos (Central)
+    view-metricas.js                   resumen por periodo, gráfico y tips (Central)
 ```
 
-## Cómo funciona (resumen del modelo)
+## Cómo funciona el dinero (resumen)
 
-1. **Fondo del día**: antes de salir anotan cuánto le dan (fondo de trabajo +
-   gasolina + gastos de jornada). Puede variar cada día.
-2. **Viajes**: cada cobro con su propina y método de pago (efectivo, transferencia
-   o tarjeta).
-3. **Gastos**: gasolina, comida de jornada, mantenimiento, imprevistos u otro,
-   cada uno con su método de pago.
-4. **Cierre**: comparan el efectivo físico contra lo que el sistema espera
-   (fondo + cobros en efectivo − gastos en efectivo). La diferencia queda a la vista.
-5. **Reparto**: el dinero a repartir = (efectivo contado − fondo del día) + todo lo
-   cobrado digital − gastos digitales. Ese monto se reparte entre las billeteras
-   que ustedes decidan.
-6. **Billeteras**: cada una tiene su saldo, movimientos manuales (ingreso/gasto) y
-   puede tener **compromisos fijos** (renta, tarjeta, préstamos...) con fecha de
-   vencimiento, si se repiten cada mes y una fecha de finalización opcional. La app
-   calcula cuánto deberían meter hoy a esa billetera para llegar a tiempo, y se
-   recalcula solo según lo que ya tengan ahorrado.
-7. **Métricas**: ingresos por día, promedio, mejor/peor día, gasto por categoría
-   contra lo presupuestado, reparto por billetera y tips automáticos.
+1. **Iniciar turno**: anotan con cuánto sale (fondo de trabajo + gasolina +
+   jornada). Arranca el cronómetro.
+2. **Viajes**: costo pagado en el negocio (si aplica) + envío + propina, y
+   cómo pagó el cliente el total. Si pagó en efectivo, todo queda en
+   efectivo. Si pagó digital, el costo del negocio sale de efectivo (porque
+   ahí sí pagó en físico) y lo demás entra a la cuenta.
+3. **Gastos de calle**: gasolina, comida de jornada, etc., cada uno con su
+   método de pago.
+4. **Terminar turno**: para el cronómetro.
+5. **Cerrar caja** (en Historial): cuentan el efectivo físico. El sistema
+   calcula lo esperado y la diferencia.
+6. **Repartir**: lo que sobra en efectivo (efectivo contado − fondo inicial)
+   y todo lo generado en la cuenta digital se reparte entre las billeteras,
+   cada una a su propio efectivo o cuenta.
+7. **Billeteras**: cada una puede recibir ingresos/gastos sueltos, moverse
+   entre efectivo y cuenta, transferirse entre sí, y tener compromisos fijos
+   (renta, tarjeta, préstamos) con meta diaria que se recalcula sola.
 
-Nada se descuenta de una billetera de forma automática: los compromisos fijos solo
-se restan cuando marcan manualmente "Pagado".
+Nada se descuenta automáticamente de un compromiso fijo: solo cuando lo
+marcan manualmente como pagado.
 
-## Correrlo en su computadora (opcional, para probar antes de subirlo)
-
-Necesitan Node.js 18+ y un PostgreSQL (puede ser local o uno gratis en la nube).
+## Correrlo en su computadora (opcional)
 
 ```bash
 cp .env.example .env
@@ -68,28 +80,23 @@ Abran http://localhost:3000
 
 ## Desplegar en Railway
 
-1. Suban esta carpeta a un repositorio de GitHub (puede ser privado).
-2. En Railway: **New Project → Deploy from GitHub repo** y seleccionen el repo.
-3. En el mismo proyecto, agreguen **New → Database → PostgreSQL**. Railway crea
-   automáticamente la variable `DATABASE_URL` y la comparte con su servicio si
-   están en el mismo proyecto (revisen en la pestaña *Variables* del servicio web
-   que `DATABASE_URL` aparezca; si no, pueden referenciarla como
-   `${{Postgres.DATABASE_URL}}`).
-4. Railway detecta que es un proyecto Node.js (por `package.json`) y usa
-   `npm install` + `npm start` automáticamente. No hace falta configurar nada más.
-5. Cuando termine el deploy, Railway les da una URL pública (algo como
-   `ruta-caja-production.up.railway.app`). Esa es la que van a usar los dos, cada
-   quien desde su teléfono.
-6. La primera vez que arranca, la app crea sola las tablas y tres billeteras por
-   default (Gastos fijos, Comida, Para ti) — pueden editarlas o borrarlas desde
-   la pestaña Billeteras.
+1. Suban esta carpeta a un repositorio de GitHub.
+2. Railway → **New Project → Deploy from GitHub repo**.
+3. Agreguen **New → Database → PostgreSQL** en el mismo proyecto (Railway
+   comparte `DATABASE_URL` automáticamente).
+4. Railway detecta Node.js y corre `npm install` + `npm start` solo.
+5. Les da una URL pública — esa la usan los dos, cada quien desde su
+   teléfono. La sincronización en vivo funciona entre ambos automáticamente.
 
-### Notas
+### Notas importantes
 
-- Los datos son compartidos entre quien sea que entre a la URL: no hay usuarios
-  ni contraseñas por ahora. Si más adelante quieren protegerla, se puede agregar
-  un login sencillo.
-- Si en algún momento la conexión a Postgres falla por SSL, agreguen la variable
-  de entorno `PGSSLMODE=require` en Railway.
-- Pueden instalar la página como "app" desde el navegador del celular (Agregar a
-  pantalla de inicio) para que se sienta como una app nativa.
+- **No pude probar esta versión en un servidor real** (este entorno no tiene
+  acceso a internet ni a una base de datos Postgres), así que revisé cada
+  archivo a mano con mucho cuidado, pero les recomiendo probar el flujo
+  completo apenas la desplieguen: iniciar turno → anotar viajes y gastos →
+  terminar turno → cerrar caja → repartir. Si algo no cuadra, avísenme y lo
+  ajustamos.
+- La hora se calcula siempre con la zona horaria de Cancún (UTC-5 fijo, sin
+  horario de verano).
+- Si la conexión a Postgres falla por SSL, agreguen `PGSSLMODE=require` en
+  las variables de entorno de Railway.

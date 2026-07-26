@@ -1,8 +1,8 @@
 {
   "name": "ruta-caja",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Control diario de ingresos de reparto y billeteras del hogar",
+  "description": "Control diario de ingresos de reparto y billeteras del hogar, con turnos, slots efectivo/banco y sincronización en vivo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -14,6 +14,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "pg": "^8.11.5"
+    "pg": "^8.11.5",
+    "socket.io": "^4.7.5"
   }
 }
