@@ -1,27 +1,29 @@
 import { api } from "./api.js";
-import { fmtMoney, fmtDateShort, todayStr, addDays } from "./utils.js";
+import { fmtMoney, fmtDateShort, escapeHtml } from "./utils.js";
 
-let range = "30"; // '7' | '30' | 'month' | 'all'
+let range = "30";
 let chart = null;
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function addDaysStr(dateStr, delta) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
 
 function rangeToDates() {
   const to = todayStr();
-  if (range === "7") return { from: addDays(to, -6), to };
-  if (range === "30") return { from: addDays(to, -29), to };
+  if (range === "7") return { from: addDaysStr(to, -6), to };
+  if (range === "30") return { from: addDaysStr(to, -29), to };
   if (range === "month") {
     const [y, m] = to.split("-");
     return { from: `${y}-${m}-01`, to };
   }
   return { from: "2020-01-01", to };
 }
-
-const CATEGORY_LABELS = {
-  gasolina: "Gasolina",
-  comida_jornada: "Comida / jornada",
-  mantenimiento: "Mantenimiento",
-  imprevistos: "Imprevistos",
-  otro: "Otro",
-};
 
 export async function render(root, ctx) {
   root.innerHTML = `<div class="loading">Calculando métricas…</div>`;
@@ -40,6 +42,7 @@ export async function render(root, ctx) {
       <div class="stat-card">
         <div class="stat-label">Total generado</div>
         <div class="stat-value mono">${fmtMoney(resumen.total_ingresos)}</div>
+        <div class="stat-sub">${resumen.total_viajes} viajes</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Promedio diario</div>
@@ -73,9 +76,7 @@ export async function render(root, ctx) {
                   const max = Math.max(...resumen.gastos_por_categoria.map((x) => x.total), 1);
                   const pct = Math.max(4, Math.round((g.total / max) * 100));
                   return `<div class="bar-row">
-                    <div class="bar-row-label"><span>${CATEGORY_LABELS[g.categoria] || g.categoria}</span><span class="mono">${fmtMoney(
-                    g.total
-                  )}</span></div>
+                    <div class="bar-row-label"><span>${escapeHtml(g.label)}</span><span class="mono">${fmtMoney(g.total)}</span></div>
                     <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
                     <div class="bar-sub">promedio/día ${fmtMoney(g.promedio_dia)}</div>
                   </div>`;
@@ -94,7 +95,7 @@ export async function render(root, ctx) {
               ${resumen.repartido_por_billetera
                 .map(
                   (w) => `<div class="row-baseline" style="justify-content:space-between; padding:6px 0">
-                    <span><span class="dot" style="background:${w.color}"></span>${w.name}</span>
+                    <span><span class="dot" style="background:${w.color}"></span>${escapeHtml(w.name)}</span>
                     <span class="mono strong">${fmtMoney(w.total)}</span>
                   </div>`
                 )
@@ -106,7 +107,7 @@ export async function render(root, ctx) {
     <div class="card tips-card">
       <div class="card-title">Tips</div>
       <ul class="tips-list">
-        ${tipsRes.tips.map((t) => `<li>${t}</li>`).join("")}
+        ${tipsRes.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
       </ul>
     </div>
   `;
