@@ -16,7 +16,6 @@
 * {
   box-sizing: border-box;
 }
-
 html,
 body {
   margin: 0;
@@ -36,7 +35,6 @@ body {
   flex-direction: column;
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.35);
 }
-
 @media (min-width: 640px) {
   body {
     padding: 28px 12px;
@@ -50,19 +48,38 @@ body {
 
 .app-header {
   background: var(--ink);
-  padding: 18px 20px 12px;
+  padding: 16px 18px 12px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 10px;
   background-image: repeating-linear-gradient(90deg, rgba(247, 242, 231, 0.35) 0 6px, transparent 6px 14px);
   background-position: bottom;
   background-size: 100% 2px;
   background-repeat: no-repeat;
 }
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.back-btn {
+  background: rgba(247, 242, 231, 0.1);
+  border: none;
+  color: var(--paper);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .app-header h1 {
   font-family: "Fraunces", serif;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--paper);
   letter-spacing: -0.3px;
   margin: 0;
@@ -70,10 +87,25 @@ body {
 .app-header h1 .slash {
   color: var(--amber);
 }
-.app-header-sub {
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: #5aa878;
+  box-shadow: 0 0 0 3px rgba(90, 168, 120, 0.25);
+  flex-shrink: 0;
+}
+.live-dot.off {
+  background: #7a7a7a;
+  box-shadow: none;
+}
+.header-sub {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(247, 242, 231, 0.5);
+  font-size: 10.5px;
+  color: rgba(247, 242, 231, 0.55);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .app-content {
@@ -112,7 +144,7 @@ body {
   font-weight: 600;
 }
 
-/* ---------- generic building blocks ---------- */
+/* ---------- generic ---------- */
 .loading,
 .empty,
 .hint {
@@ -125,7 +157,6 @@ body {
   text-align: left;
   padding: 4px 0;
 }
-
 .card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -140,8 +171,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: space-between;
 }
-
 .field {
   display: flex;
   flex-direction: column;
@@ -169,10 +200,14 @@ input[type="number"] {
 input:disabled {
   opacity: 0.6;
 }
-
 .row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 .row-baseline {
@@ -180,7 +215,6 @@ input:disabled {
   align-items: baseline;
   gap: 8px;
 }
-
 .btn {
   font-family: "Inter", sans-serif;
   font-weight: 600;
@@ -245,7 +279,6 @@ input:disabled {
   font-size: 11.5px;
   cursor: pointer;
 }
-
 .icon-btn {
   background: none;
   border: none;
@@ -255,7 +288,6 @@ input:disabled {
   font-size: 14px;
   line-height: 1;
 }
-
 .mono {
   font-family: "IBM Plex Mono", monospace;
 }
@@ -277,13 +309,6 @@ input:disabled {
 .diff-under {
   color: var(--rose);
 }
-.diff-label {
-  font-family: "Inter", sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
 .chip {
   font-size: 10.5px;
   font-weight: 600;
@@ -295,10 +320,6 @@ input:disabled {
 .chip-muted {
   background: var(--paper-dark);
   color: var(--ink-soft);
-}
-.tag-amber {
-  color: var(--amber-dark);
-  font-size: 12px;
 }
 .dot {
   display: inline-block;
@@ -316,99 +337,119 @@ input:disabled {
   border-radius: 99px;
 }
 
-/* ---------- date bar ---------- */
-.datebar {
+/* ---------- chip toggle (slot / método) ---------- */
+.chip-toggle {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 4px;
+  gap: 6px;
 }
-.datebar-label {
+.chip-toggle button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  border-radius: 10px;
+  padding: 8px 6px;
+  font-size: 12.5px;
   font-weight: 600;
-  font-size: 14px;
+  cursor: pointer;
+}
+.chip-toggle button.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
 }
 
-/* ---------- ticket (daily total) ---------- */
-.ticket {
-  border-radius: 16px;
-  padding: 16px 18px;
+/* ---------- home: role cards ---------- */
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 6px;
 }
-.ticket-dark {
+.role-card {
+  border-radius: 20px;
+  padding: 22px 20px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.role-card-operativo {
   background: var(--ink);
   color: var(--paper);
 }
-.ticket-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: rgba(247, 242, 231, 0.55);
-  margin-bottom: 2px;
+.role-card-central {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
 }
-.ticket-big {
+.role-card-title {
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: 19px;
+}
+.role-card-sub {
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+.role-card-stat {
+  margin-top: 8px;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 27px;
-  font-weight: 600;
-}
-.ticket-sub {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(247, 242, 231, 0.6);
-  display: flex;
-  gap: 12px;
-  margin-top: 6px;
-}
-.ticket-sub .accent {
-  color: var(--amber);
+  font-size: 13px;
 }
 
-/* ---------- fondo grid ---------- */
-.fondo-grid {
+/* ---------- cronómetro / turno activo ---------- */
+.turno-activo {
+  background: var(--ink);
+  border-radius: 18px;
+  padding: 18px;
+  color: var(--paper);
+}
+.crono-display {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin: 4px 0 10px;
+}
+.turno-stats {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
+  margin-bottom: 12px;
 }
-.fondo-total {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  margin: 4px 0 12px;
+.turno-stat {
+  background: rgba(247, 242, 231, 0.07);
+  border-radius: 10px;
+  padding: 8px 10px;
 }
-
-/* ---------- lists ---------- */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.list-item {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 13px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.list-item-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.time {
-  font-size: 12px;
-  color: var(--ink-soft);
-  width: 38px;
-  flex-shrink: 0;
-}
-.note {
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  margin-top: 1px;
-}
-.section-label {
-  font-size: 12px;
-  color: var(--ink-soft);
+.turno-stat-label {
+  font-size: 10px;
+  color: rgba(247, 242, 231, 0.55);
   font-weight: 600;
+}
+.turno-stat-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 15px;
+  margin-top: 2px;
+}
+.meta-bar-track {
+  background: rgba(247, 242, 231, 0.12);
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.meta-bar-fill {
+  background: var(--amber);
+  height: 100%;
+  border-radius: 99px;
+}
+.meta-bar-label {
+  font-size: 11px;
+  color: rgba(247, 242, 231, 0.65);
   margin-top: 4px;
 }
 
@@ -453,11 +494,86 @@ input:disabled {
   margin: 6px 0;
 }
 
-/* ---------- wallets / commitments ---------- */
+/* ---------- lists ---------- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.list-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.list-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.time {
+  font-size: 12px;
+  color: var(--ink-soft);
+  width: 38px;
+  flex-shrink: 0;
+}
+.note {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+.section-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ---------- turno historial card ---------- */
+.turno-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.turno-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  cursor: pointer;
+}
+.turno-card-meta {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.turno-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+/* ---------- wallets ---------- */
 .wallet-card .wallet-name {
   font-family: "Fraunces", serif;
   font-weight: 600;
   font-size: 15px;
+}
+.slot-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+.slot-row b {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
 }
 .goal-badge {
   font-size: 12px;
@@ -516,9 +632,6 @@ input:disabled {
 .checkbox-row input {
   width: auto;
 }
-.new-c-end-wrap {
-  margin-bottom: 0;
-}
 .palette-row {
   display: flex;
   gap: 8px;
@@ -534,12 +647,6 @@ input:disabled {
 }
 .palette-dot.selected {
   outline: 2px solid var(--ink);
-}
-#add-wallet-form {
-  margin-bottom: 10px;
-}
-#add-wallet-form input[type="text"] {
-  margin-bottom: 8px;
 }
 
 /* ---------- métricas ---------- */
@@ -627,6 +734,28 @@ input:disabled {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ---------- ticket ---------- */
+.ticket {
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+.ticket-dark {
+  background: var(--ink);
+  color: var(--paper);
+}
+.ticket-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(247, 242, 231, 0.55);
+  margin-bottom: 2px;
+}
+.ticket-big {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 27px;
+  font-weight: 600;
 }
 
 /* ---------- misc ---------- */
